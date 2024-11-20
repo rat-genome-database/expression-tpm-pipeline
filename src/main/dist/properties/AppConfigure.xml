@@ -1,0 +1,10 @@
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+    <bean id="main" class="edu.mcw.rgd.expressionTpm.Main">
+        <property name="version" value="Load GEO expression TPM values -- build 11/11/2024"/>
+        <property name="file" value="\data\GSE148598_mRatBN72.genes.TPM.matrix"/>
+<!--        C:\Github\expression-tpm-pipeline\src\main\dist-->
+        <property name="speciesType" value="3"/>
+        <property name="mapKey" value="372"/>
+    </bean>
+</beans>
