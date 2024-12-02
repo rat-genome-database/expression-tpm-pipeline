@@ -3,6 +3,7 @@ package edu.mcw.rgd.expressionTpm;
 import edu.mcw.rgd.dao.DataSourceFactory;
 import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.datamodel.Gene;
+import edu.mcw.rgd.datamodel.Transcript;
 import edu.mcw.rgd.datamodel.pheno.ClinicalMeasurement;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
@@ -21,6 +22,7 @@ public class DAO {
     private GeneDAO geneDAO = new GeneDAO();
     private GeneExpressionDAO gedao = new GeneExpressionDAO();
     private PhenominerDAO pdao = new PhenominerDAO();
+    private TranscriptDAO tdao = new TranscriptDAO();
 
     public String getConnection(){
         return geneDAO.getConnectionInfo();
@@ -38,6 +40,14 @@ public class DAO {
         return geneDAO.getGenesBySymbol(symbol,speciesTypeKey);
     }
 
+    public Gene getGeneByRgdId(int rgdId) throws Exception{
+        return geneDAO.getGene(rgdId);
+    }
+
+    public List<Gene> getGenesByEnsemblSymbol(int speciesTypeKey, String symbol) throws Exception{
+        return geneDAO.getActiveGenesByEnsemblSymbol(speciesTypeKey,symbol);
+    }
+
     public ClinicalMeasurement getClinicalMeasurement(int cmoId) throws Exception{
         return pdao.getClinicalMeasurement(cmoId);
     }
@@ -48,5 +58,9 @@ public class DAO {
 
     public int insertExpressionRecordValues(Collection<GeneExpressionRecordValue> incoming) throws Exception{
         return gedao.insertGeneExpressionRecordValueBatch(incoming);
+    }
+
+    public List<Transcript> getTranscriptsByAccId(String acc) throws Exception{
+        return tdao.getTranscriptsByAccId(acc);
     }
 }

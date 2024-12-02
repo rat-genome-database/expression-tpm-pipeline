@@ -1,6 +1,7 @@
 package edu.mcw.rgd.expressionTpm;
 
 import edu.mcw.rgd.datamodel.Gene;
+import edu.mcw.rgd.datamodel.Transcript;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionValueCount;
@@ -47,9 +48,12 @@ public class Main {
         long pipeStart = System.currentTimeMillis();
         logger.info("Pipeline started at "+sdt.format(new Date(pipeStart))+"\n");
 
+        boolean isGenes = true;
         Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
         Map<Integer,String> cmoMap = new HashMap<>();
         List<GeneExpressionRecordValue> values = new ArrayList<>();
+        if (file.contains("isoforms"))
+            isGenes = false;
 //        System.out.println("Working Directory = " + System.getProperty("user.dir"));
 //        Map<Integer,>
         try (BufferedReader br = openFile(System.getProperty("user.dir")+file)) {
@@ -84,13 +88,60 @@ public class Main {
                     }
                 } // end first row
                 else {
-                    String geneSymbol = parsedLine[0];
-                    geneSymbol = geneSymbol.replace("\"","");
-                    Gene gene = dao.getGeneBySymbol(geneSymbol.toLowerCase(),speciesType);
+                    String symbol = parsedLine[0];;
+                    String geneSymbol = "";
+                    Gene gene = null;
+                    Transcript transcript = null;
+                    if (isGenes) {
+                        geneSymbol = symbol.replace("\"", "");
+                        if (geneSymbol.startsWith("RGD")) {
+                            int rgdId = Integer.parseInt(geneSymbol.replace("RGD",""));
+                            gene = dao.getGeneByRgdId(rgdId);
+                        }
+                        else
+                            gene = dao.getGeneBySymbol(geneSymbol.toLowerCase(), speciesType);
 
+                        if (gene == null){
+                            List<Gene> geneList = dao.getGenesByEnsemblSymbol(speciesType,geneSymbol);
+                            if (geneList.size()==1){
+                                gene = geneList.get(0);
+                            }
+                            else {
+                                for (Gene g : geneList){
+                                    if (Utils.stringsAreEqualIgnoreCase(geneSymbol,g.getSymbol()) ||
+                                    Utils.stringsAreEqualIgnoreCase(geneSymbol, g.getEnsemblGeneSymbol())) {
+                                        gene = g;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        // get transcript data somehow
+                        // remove trailing decimal and find transcript
+                        symbol = symbol.replace("\"", "");
+                        int trimIndex = symbol.indexOf(".");
+                        String acc = "";
+                        if (trimIndex<0)
+                            acc = symbol;
+                        else
+                            acc = symbol.substring(0,trimIndex);
+                        List<Transcript> tList = dao.getTranscriptsByAccId(acc);
+                        if (tList.size()==1){
+                            transcript = tList.get(0);
+                        }
+                        else if (tList.size()>1){
+                            System.out.println(acc+" > 1");
+                        }
+                    }
                     for (int j = 1; j < parsedLine.length; j++){
-                        if (gene==null){
+                        if (gene==null && isGenes){
                             logger.info("\tGene:"+geneSymbol+" was not found!");
+                            break;
+                        }
+                        if (transcript==null && !isGenes){
+                            logger.info("\tTranscript:"+symbol+" was not found!");
                             break;
                         }
                         if (recordMap.get(j)==null){ // there is no record
@@ -107,7 +158,10 @@ public class Main {
                          */
                         GeneExpressionRecordValue v = new GeneExpressionRecordValue();
                         v.setMapKey(mapKey);
-                        v.setExpressedObjectRgdId(gene.getRgdId());
+                        if (isGenes)
+                            v.setExpressedObjectRgdId(gene.getRgdId());
+                        else
+                            v.setExpressedObjectRgdId(transcript.getRgdId());
                         v.setExpressionUnit("TPM");
                         v.setTpmValue(value);
                         v.setExpressionValue(value);
@@ -130,7 +184,7 @@ public class Main {
             }
             if (!values.isEmpty()){
                 logger.info("\t\tExpression Values being entered: "+values.size());
-                dao.insertExpressionRecordValues(values);
+//                dao.insertExpressionRecordValues(values);
             }
         }
         catch (Exception e){
