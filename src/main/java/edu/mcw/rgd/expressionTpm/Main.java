@@ -56,7 +56,7 @@ public class Main {
             isGenes = false;
 //        System.out.println("Working Directory = " + System.getProperty("user.dir"));
 //        Map<Integer,>
-        try (BufferedReader br = openFile(System.getProperty("user.dir")+file)) {
+        try (BufferedReader br = openFile(file)) {
             String lineData;
             int i = 0;
             while ((lineData = br.readLine()) != null) {
