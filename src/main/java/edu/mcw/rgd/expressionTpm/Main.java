@@ -51,6 +51,8 @@ public class Main {
         long pipeStart = System.currentTimeMillis();
         logger.info("Pipeline started at "+sdt.format(new Date(pipeStart))+"\n");
 
+        logger.info("Running for study: " + study);
+
         boolean isGenes = true;
         Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
         Map<Integer,String> cmoMap = new HashMap<>();
