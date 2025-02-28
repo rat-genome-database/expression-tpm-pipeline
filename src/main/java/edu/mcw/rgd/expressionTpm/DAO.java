@@ -36,12 +36,20 @@ public class DAO {
         return gedao.getGeneExpressionRecordBySampleId(sampleId);
     }
 
+    public List<Gene> getActiveGenesBySymbol(String symbol, int speciesType) throws Exception{
+        return geneDAO.getActiveGenes(speciesType, symbol);
+    }
+
     public Gene getGeneBySymbol(String symbol, int speciesTypeKey) throws Exception{
         return geneDAO.getGenesBySymbol(symbol,speciesTypeKey);
     }
 
     public Gene getGeneByRgdId(int rgdId) throws Exception{
         return geneDAO.getGene(rgdId);
+    }
+
+    public List<Gene> getGenesByAlias(String alias, int species) throws Exception{
+        return geneDAO.getActiveGenesByAlias(alias,species);
     }
 
     public List<Gene> getGenesByEnsemblSymbol(int speciesTypeKey, String symbol) throws Exception{

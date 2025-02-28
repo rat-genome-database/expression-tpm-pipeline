@@ -20,7 +20,10 @@ import java.util.zip.GZIPInputStream;
 
 public class Main {
     private String version;
-    private String file;
+//    private String file;
+    private String genesFile;
+    private String isoformFile;
+    private String study;
     private int speciesType;
     private int mapKey;
     protected Logger logger = LogManager.getLogger("status");
@@ -52,11 +55,19 @@ public class Main {
         Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
         Map<Integer,String> cmoMap = new HashMap<>();
         List<GeneExpressionRecordValue> values = new ArrayList<>();
-        if (file.contains("isoforms"))
-            isGenes = false;
-//        System.out.println("Working Directory = " + System.getProperty("user.dir"));
-//        Map<Integer,>
-        try (BufferedReader br = openFile(file)) {
+        for (String arg : args){
+            isGenes = switch (arg) {
+                case "-genes" -> true;
+                case "-isoforms" -> false;
+                default -> true;
+            };
+        }
+        String file = "";
+        if (isGenes)
+            file = study+genesFile;
+        else
+            file = study+isoformFile;
+        try (BufferedReader br = openFile("data/"+file)) {
             String lineData;
             int i = 0;
             while ((lineData = br.readLine()) != null) {
@@ -98,8 +109,19 @@ public class Main {
                             int rgdId = Integer.parseInt(geneSymbol.replace("RGD",""));
                             gene = dao.getGeneByRgdId(rgdId);
                         }
-                        else
-                            gene = dao.getGeneBySymbol(geneSymbol.toLowerCase(), speciesType);
+                        else {
+                            List<Gene> genes = dao.getActiveGenesBySymbol(geneSymbol.toLowerCase(), speciesType);
+                            if (genes.size()>1){
+                                logger.info("\tGene: "+geneSymbol+" has multiple based on symbol...");
+                                for (Gene g : genes){
+                                    logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
+                                }
+                                continue;
+                            }
+                            else if (genes.size()==1)
+                                gene=genes.get(0);
+                        }
+
 
                         if (gene == null){
                             List<Gene> geneList = dao.getGenesByEnsemblSymbol(speciesType,geneSymbol);
@@ -116,6 +138,20 @@ public class Main {
                                 }
                             }
                         }
+                        // check previously known as if not found or alias
+                        if (gene == null){
+                            List<Gene> geneList = dao.getGenesByAlias(geneSymbol,speciesType);
+                            if (geneList.size()>1){
+                                logger.info("\tGene: "+geneSymbol+" has multiple alias...");
+                                for (Gene g : geneList){
+                                    logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
+                                }
+                                continue;
+                            }
+                            else if (geneList.size()==1)
+                                gene = geneList.get(0);
+                        }
+                        // if multiple found with alias, log all symbols and skip
                     }
                     else{
                         // get transcript data somehow
@@ -137,11 +173,11 @@ public class Main {
                     }
                     for (int j = 1; j < parsedLine.length; j++){
                         if (gene==null && isGenes){
-                            logger.info("\tGene:"+geneSymbol+" was not found!");
+                            logger.info("\tGene: "+geneSymbol+" was not found!");
                             break;
                         }
                         if (transcript==null && !isGenes){
-                            logger.info("\tTranscript:"+symbol+" was not found!");
+                            logger.info("\tTranscript: "+symbol+" was not found!");
                             break;
                         }
                         if (recordMap.get(j)==null){ // there is no record
@@ -184,7 +220,7 @@ public class Main {
             }
             if (!values.isEmpty()){
                 logger.info("\t\tExpression Values being entered: "+values.size());
-//                dao.insertExpressionRecordValues(values);
+                dao.insertExpressionRecordValues(values);
             }
         }
         catch (Exception e){
@@ -230,14 +266,6 @@ public class Main {
         return version;
     }
 
-    public void setFile(String file) {
-        this.file = file;
-    }
-
-    public String getFile() {
-        return file;
-    }
-
     public void setSpeciesType(int speciesType) {
         this.speciesType = speciesType;
     }
@@ -252,5 +280,29 @@ public class Main {
 
     public int getMapKey() {
         return mapKey;
+    }
+
+    public void setStudy(String study) {
+        this.study = study;
+    }
+
+    public String getStudy(){
+        return study;
+    }
+
+    public void setGenesFile(String genesFile) {
+        this.genesFile = genesFile;
+    }
+
+    public String getGenesFile() {
+        return genesFile;
+    }
+
+    public void setIsoformFile(String isoformFile) {
+        this.isoformFile = isoformFile;
+    }
+
+    public String getIsoformFile() {
+        return isoformFile;
     }
 }
