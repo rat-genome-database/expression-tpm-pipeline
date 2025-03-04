@@ -27,6 +27,7 @@ public class Main {
     private int speciesType;
     private int mapKey;
     protected Logger logger = LogManager.getLogger("status");
+    protected Logger notFoundLog = LogManager.getLogger("notFoundStatus");
     private final DAO dao = new DAO();
     private SimpleDateFormat sdt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -175,11 +176,11 @@ public class Main {
                     }
                     for (int j = 1; j < parsedLine.length; j++){
                         if (gene==null && isGenes){
-                            logger.info("\tGene: "+geneSymbol+" was not found!");
+                            notFoundLog.info("\tGene: "+geneSymbol+" was not found or has been withdrawn!");
                             break;
                         }
                         if (transcript==null && !isGenes){
-                            logger.info("\tTranscript: "+symbol+" was not found!");
+                            notFoundLog.info("\tTranscript: "+symbol+" was not found or has been withdrawn!");
                             break;
                         }
                         if (recordMap.get(j)==null){ // there is no record
@@ -213,6 +214,8 @@ public class Main {
                             v.setExpressionLevel("low");
                         else
                             v.setExpressionLevel("below cutoff");
+                        if (Utils.isStringEmpty(v.getExpressionMeasurementAccId()) || Utils.doublesAreEqual(value, 0.00,2))
+                            continue;
                         if (!checkValueExists(v))
                             values.add(v);
                     }
