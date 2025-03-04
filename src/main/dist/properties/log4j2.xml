@@ -21,19 +21,19 @@
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
         </File>
 
-        <RollingFile name="notFoundDetail" append="true" fileName="logs/detail.log" filePattern="logs/detail.log.%d{yyyy-MM}">
+        <RollingFile name="notFoundDetail" append="true" fileName="logs/notFoundDetail.log" filePattern="logs/notFoundDetail.log.%d{yyyy-MM}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1"/><!-- 1 month roll over -->
             </Policies>
         </RollingFile>
-        <RollingFile name="notFoundStatus" append="true" fileName="logs/status.log" filePattern="logs/status.log.%d{yyyy-MM}">
+        <RollingFile name="notFoundStatus" append="true" fileName="logs/notFoundStatus.log" filePattern="logs/notFoundStatus.log.%d{yyyy-MM}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="1"/>
             </Policies>
         </RollingFile>
-        <File name="notFoundSummary" append="false" fileName="logs/summary.log">
+        <File name="notFoundSummary" append="false" fileName="logs/notFoundSummary.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
         </File>
     </Appenders>

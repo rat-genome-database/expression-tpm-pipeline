@@ -5,7 +5,7 @@
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
         <property name="genesFile" value=".genes.TPM.matrix"/>
         <property name="isoformFile" value=".isoforms.TPM.matrix"/>
-        <property name="study" value="GSE114322"/>
+        <property name="study" value="GSE144276"/>
         <property name="speciesType" value="3"/>
         <property name="mapKey" value="372"/>
     </bean>
