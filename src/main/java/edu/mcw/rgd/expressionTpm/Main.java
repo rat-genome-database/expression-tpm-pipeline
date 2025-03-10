@@ -171,7 +171,11 @@ public class Main {
                             transcript = tList.get(0);
                         }
                         else if (tList.size()>1){
-                            System.out.println(acc+" > 1");
+                            logger.info("\tTranscript: "+acc+" has multiple records...");
+                            for (Transcript t : tList){
+                                logger.info("\t\tTranscript: "+t.dump("|"));
+                            }
+                            //System.out.println(acc+" > 1");
                         }
                     }
                     for (int j = 1; j < parsedLine.length; j++){
@@ -180,7 +184,7 @@ public class Main {
                             break;
                         }
                         if (transcript==null && !isGenes){
-                            notFoundLog.info("\tTranscript: "+symbol+" was not found or has been withdrawn!");
+                            notFoundLog.info("\tTranscript: "+symbol+" was not found!");
                             break;
                         }
                         if (recordMap.get(j)==null){ // there is no record
