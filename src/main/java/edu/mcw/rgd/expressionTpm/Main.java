@@ -1,6 +1,7 @@
 package edu.mcw.rgd.expressionTpm;
 
 import edu.mcw.rgd.datamodel.Gene;
+import edu.mcw.rgd.datamodel.MapData;
 import edu.mcw.rgd.datamodel.Transcript;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
@@ -118,6 +119,12 @@ public class Main {
                                 logger.info("\tGene: "+geneSymbol+" has multiple based on symbol...");
                                 for (Gene g : genes){
                                     logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
+                                    List<MapData> maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),mapKey);
+                                    if (maps == null || maps.isEmpty())
+                                        maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),373);
+                                    for (MapData md : maps){
+                                        logger.info("\t\t"+md.dump("|"));
+                                    }
                                 }
                                 continue;
                             }
@@ -148,6 +155,10 @@ public class Main {
                                 logger.info("\tGene: "+geneSymbol+" has multiple alias...");
                                 for (Gene g : geneList){
                                     logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
+                                    List<MapData> maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),mapKey);
+                                    for (MapData md : maps){
+                                        logger.info("\t\t"+md.dump("|"));
+                                    }
                                 }
                                 continue;
                             }

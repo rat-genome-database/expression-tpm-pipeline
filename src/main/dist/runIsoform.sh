@@ -3,7 +3,7 @@
 APPNAME=expression-tpm-pipeline
 SERVER=`hostname -s | tr '[a-z]' '[A-Z]'`
 
-EMAILLIST="llamers@mcw.edu"
+EMAILLIST="llamers@mcw.edu wdemos@mcw.edu"
 if [ "$SERVER" == "REED" ]; then
   EMAILLIST="llamers@mcw.edu mtutaj@mcw.edu jrsmith@mcw.edu akwitek@mcw.edu wdemos@mcw.edu"
 fi

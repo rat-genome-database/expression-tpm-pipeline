@@ -3,6 +3,7 @@ package edu.mcw.rgd.expressionTpm;
 import edu.mcw.rgd.dao.DataSourceFactory;
 import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.datamodel.Gene;
+import edu.mcw.rgd.datamodel.MapData;
 import edu.mcw.rgd.datamodel.Transcript;
 import edu.mcw.rgd.datamodel.pheno.ClinicalMeasurement;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
@@ -23,6 +24,7 @@ public class DAO {
     private GeneExpressionDAO gedao = new GeneExpressionDAO();
     private PhenominerDAO pdao = new PhenominerDAO();
     private TranscriptDAO tdao = new TranscriptDAO();
+    private MapDAO mdao = new MapDAO();
 
     public String getConnection(){
         return geneDAO.getConnectionInfo();
@@ -70,5 +72,9 @@ public class DAO {
 
     public List<Transcript> getTranscriptsByAccId(String acc) throws Exception{
         return tdao.getTranscriptsByAccId(acc);
+    }
+
+    public List<MapData> getMapDataByRgdIdAndMapKey(int rgdId, int mapKey) throws Exception {
+        return mdao.getMapData(rgdId, mapKey);
     }
 }
