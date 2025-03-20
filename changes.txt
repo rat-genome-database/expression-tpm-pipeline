@@ -1,3 +1,6 @@
+3/18/2025
+ using gtf file to get genes
+
 02/28/2025
 
 updating the pipeline to log for multiple alias or genes sharing symbol
