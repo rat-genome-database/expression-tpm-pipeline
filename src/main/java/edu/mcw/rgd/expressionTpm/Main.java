@@ -24,6 +24,7 @@ public class Main {
 //    private String file;
     private String genesFile;
     private String isoformFile;
+    private String gtfFile;
     private String study;
     private int speciesType;
     private int mapKey;
@@ -59,6 +60,7 @@ public class Main {
         Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
         Map<Integer,String> cmoMap = new HashMap<>();
         List<GeneExpressionRecordValue> values = new ArrayList<>();
+        Map<String, Gene> geneMap = new HashMap<>();
         for (String arg : args){
             isGenes = switch (arg) {
                 case "-genes" -> true;
@@ -67,8 +69,10 @@ public class Main {
             };
         }
         String file = "";
-        if (isGenes)
-            file = study+genesFile;
+        if (isGenes) {
+            file = study + genesFile;
+            geneMap = getGenesFromGTF();
+        }
         else
             file = study+isoformFile;
         try (BufferedReader br = openFile("data/"+file)) {
@@ -114,58 +118,24 @@ public class Main {
                             gene = dao.getGeneByRgdId(rgdId);
                         }
                         else {
-                            List<Gene> genes = dao.getActiveGenesBySymbol(geneSymbol.toLowerCase(), speciesType);
-                            if (genes.size()>1){
-                                logger.info("\tGene: "+geneSymbol+" has multiple based on symbol...");
-                                for (Gene g : genes){
-                                    logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
-                                    List<MapData> maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),mapKey);
-                                    if (maps == null || maps.isEmpty())
-                                        maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),373);
-                                    for (MapData md : maps){
-                                        logger.info("\t\t"+md.dump("|"));
-                                    }
-                                }
-                                continue;
-                            }
-                            else if (genes.size()==1)
-                                gene=genes.get(0);
+                            gene = geneMap.get(geneSymbol);
+//                            if (genes.size()>1){
+//                                logger.info("\tGene: "+geneSymbol+" has multiple based on symbol...");
+//                                for (Gene g : genes){
+//                                    logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
+//                                    List<MapData> maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),mapKey);
+//                                    if (maps == null || maps.isEmpty())
+//                                        maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),373);
+//                                    for (MapData md : maps){
+//                                        logger.info("\t\t"+md.dump("|"));
+//                                    }
+//                                }
+//                                continue;
+//                            }
+//                            else if (genes.size()==1)
+//                                gene=genes.get(0);
                         }
 
-
-                        if (gene == null){
-                            List<Gene> geneList = dao.getGenesByEnsemblSymbol(speciesType,geneSymbol);
-                            if (geneList.size()==1){
-                                gene = geneList.get(0);
-                            }
-                            else {
-                                for (Gene g : geneList){
-                                    if (Utils.stringsAreEqualIgnoreCase(geneSymbol,g.getSymbol()) ||
-                                    Utils.stringsAreEqualIgnoreCase(geneSymbol, g.getEnsemblGeneSymbol())) {
-                                        gene = g;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        // check previously known as if not found or alias
-                        if (gene == null){
-                            List<Gene> geneList = dao.getGenesByAlias(geneSymbol,speciesType);
-                            if (geneList.size()>1){
-                                logger.info("\tGene: "+geneSymbol+" has multiple alias...");
-                                for (Gene g : geneList){
-                                    logger.info("\t\tGene Symbol: "+g.getSymbol()+" | Gene RGD ID: "+g.getRgdId());
-                                    List<MapData> maps = dao.getMapDataByRgdIdAndMapKey(g.getRgdId(),mapKey);
-                                    for (MapData md : maps){
-                                        logger.info("\t\t"+md.dump("|"));
-                                    }
-                                }
-                                continue;
-                            }
-                            else if (geneList.size()==1)
-                                gene = geneList.get(0);
-                        }
-                        // if multiple found with alias, log all symbols and skip
                     }
                     else{
                         // get transcript data somehow
@@ -278,6 +248,83 @@ public class Main {
         return reader;
     }
 
+    Map<String, Gene> getGenesFromGTF() throws Exception{
+        Map<String, Gene> genesRgdMap = new HashMap<>();
+        try (BufferedReader br = openFile(gtfFile)) {
+            // chr gnomon type start stop skip skip skip geneIdLoc
+            String lineData;
+            while ((lineData = br.readLine()) != null) {
+                if (lineData.startsWith("#"))
+                    continue;
+                String[] split = lineData.split("\t");
+                String chr = split[0].replace("chr", "");
+                int start = Integer.parseInt(split[3]);
+                int stop = Integer.parseInt(split[4]);
+                String part8 = split[8];
+                // parse part8 to get gene id and find gene based on position
+                String[] infoSplit = part8.split(";");
+                String geneSymbol = infoSplit[0];
+                geneSymbol = geneSymbol.replace("gene_id ", "");
+                geneSymbol = geneSymbol.replace("\"", "");
+                if (genesRgdMap.get(geneSymbol) != null)
+                    continue;
+                List<Gene> genes = dao.getActiveGenesBySymbol(geneSymbol.toLowerCase(), speciesType);
+                if (!genes.isEmpty()) {
+                    for (Gene g : genes){
+                        if (Utils.stringsAreEqualIgnoreCase(g.getSymbol(), geneSymbol)) {
+                            genesRgdMap.put(geneSymbol, g);
+                            break;
+                        }
+                    }
+                } else {
+                    List<Gene> activeGenes = dao.getActiveGenesByLocation(chr, start, stop, mapKey);
+                    if (activeGenes.size() == 1) {
+                        genesRgdMap.put(geneSymbol, activeGenes.get(0));
+                    } else if (!activeGenes.isEmpty()){
+                        boolean found = false;
+                        // loop through genes and find whichever one by alias if need be
+                        for (Gene g : activeGenes) {
+                            if (Utils.stringsAreEqualIgnoreCase(g.getSymbol(), geneSymbol)) {
+                                genesRgdMap.put(geneSymbol, g);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            List<Gene> geneList = dao.getGenesByAlias(geneSymbol, speciesType);
+                            for (Gene gene : activeGenes) {
+                                for (Gene alias : geneList) {
+                                    if (gene.getRgdId() == alias.getRgdId()) {
+                                        genesRgdMap.put(geneSymbol, alias);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (found)
+                                    break;
+                            }
+                        }
+                    }
+                    else {// active genes is empty
+                        List<Gene> geneList = dao.getGenesByAliasAndAliasType(geneSymbol, speciesType,"old_gene_symbol");
+                        if (geneList.size()==1){
+                            genesRgdMap.put(geneSymbol,geneList.get(0));
+                        }
+                        else if (!geneList.isEmpty()){
+                            // ?
+//                            genesRgdMap.put(geneSymbol,null);
+                            System.out.println(geneList);
+                        }
+                    }
+                } // end else
+            } // end while
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        return genesRgdMap;
+    }
+
     public void setVersion(String version) {
         this.version=version;
     }
@@ -324,5 +371,9 @@ public class Main {
 
     public String getIsoformFile() {
         return isoformFile;
+    }
+
+    public void setGtfFile(String gtfFile) {
+        this.gtfFile = gtfFile;
     }
 }

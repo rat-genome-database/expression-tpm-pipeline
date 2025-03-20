@@ -5,6 +5,7 @@
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
         <property name="genesFile" value=".genes.TPM.matrix"/>
         <property name="isoformFile" value=".isoforms.TPM.matrix"/>
+        <property name="gtfFile" value="data/mod_GCF_015227675.2_mRatBN7.2_genomic.gtf"/>
         <property name="study" value="GSE114322"/>
         <property name="speciesType" value="3"/>
         <property name="mapKey" value="372"/>
