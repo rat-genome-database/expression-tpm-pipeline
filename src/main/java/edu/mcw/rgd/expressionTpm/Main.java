@@ -313,7 +313,8 @@ public class Main {
                         else if (!geneList.isEmpty()){
                             // ?
 //                            genesRgdMap.put(geneSymbol,null);
-                            System.out.println(geneList);
+                            logger.info("\t"+geneSymbol+" has multiple genes from Alias");
+//                            System.out.println(geneList);
                         }
                     }
                 } // end else
