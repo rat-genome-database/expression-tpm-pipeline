@@ -1,3 +1,6 @@
+3/21/2025
+ making pipeline to run and get meta data for studies
+
 3/18/2025
  using gtf file to get genes
 

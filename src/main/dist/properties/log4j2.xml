@@ -36,6 +36,22 @@
         <File name="notFoundSummary" append="false" fileName="logs/notFoundSummary.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
         </File>
+
+        <RollingFile name="downloadDetail" append="true" fileName="logs/downloadDetail.log" filePattern="logs/downloadDetail.log.%d{yyyy-MM}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/><!-- 1 month roll over -->
+            </Policies>
+        </RollingFile>
+        <RollingFile name="downloadStatus" append="true" fileName="logs/downloadStatus.log" filePattern="logs/downloadStatus.log.%d{yyyy-MM}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+        </RollingFile>
+        <File name="downloadSummary" append="false" fileName="logs/downloadSummary.log">
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+        </File>
     </Appenders>
 
     <Loggers>
@@ -52,6 +68,12 @@
             <AppenderRef ref="notFoundDetail"/>
             <AppenderRef ref="notFoundStatus" level="info"/>
             <AppenderRef ref="notFoundSummary" level="info"/>
+            <AppenderRef ref="Console" level="info"/>
+        </Logger>
+        <Logger name="downloadStatus" level="debug" additivity="false">
+            <AppenderRef ref="downloadDetail"/>
+            <AppenderRef ref="downloadStatus" level="info"/>
+            <AppenderRef ref="downloadSummary" level="info"/>
             <AppenderRef ref="Console" level="info"/>
         </Logger>
     </Loggers>

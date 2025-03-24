@@ -5,9 +5,14 @@
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
         <property name="genesFile" value=".genes.TPM.matrix"/>
         <property name="isoformFile" value=".isoforms.TPM.matrix"/>
-        <property name="gtfFile" value="data/mod_GCF_015227675.2_mRatBN7.2_genomic.gtf"/>
+        <property name="gtfFile" value="data/readOnly/mod_GCF_015227675.2_mRatBN7.2_genomic.gtf"/>
         <property name="study" value="GSE114322"/>
         <property name="speciesType" value="3"/>
         <property name="mapKey" value="372"/>
+    </bean>
+    <bean id="metaData" class="edu.mcw.rgd.expressionTpm.MetaDataLoader">
+        <property name="version" value="Generate Meta Data for Studies -- build 03/21/2025"/>
+        <property name="studiesList" value="data/readOnly/studiesList.txt"/>
+        <property name="species" value="Rattus"/>
     </bean>
 </beans>

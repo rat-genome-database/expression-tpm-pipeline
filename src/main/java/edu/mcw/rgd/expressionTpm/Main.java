@@ -39,7 +39,23 @@ public class Main {
         new XmlBeanDefinitionReader(bf).loadBeanDefinitions(new FileSystemResource("properties/AppConfigure.xml"));
         try {
             Main main = (Main) bf.getBean("main");
-            main.run(args);
+            for (String arg : args){
+                switch (arg) {
+                    case "-genes":
+                        main.run(true);
+                        break;
+                    case "-isoforms":
+                        main.run(false);
+                        break;
+                    case "--downloadMetaData":
+                        MetaDataLoader loader = (MetaDataLoader) bf.getBean("metaData");
+                        loader.main();
+                        break;
+                    default:
+                        main.run(true);;
+                };
+            }
+
         }
         catch (Exception e) {
             Utils.printStackTrace(e, LogManager.getLogger("status"));
@@ -47,7 +63,7 @@ public class Main {
         }
     }
 
-    void run(String[] args) throws Exception {
+    void run(boolean isGenes) throws Exception {
         logger.info(getVersion());
         logger.info("   "+dao.getConnection());
 
@@ -56,18 +72,12 @@ public class Main {
 
         logger.info("Running for study: " + study);
 
-        boolean isGenes = true;
+//        boolean isGenes = true;
         Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
         Map<Integer,String> cmoMap = new HashMap<>();
         List<GeneExpressionRecordValue> values = new ArrayList<>();
         Map<String, Gene> geneMap = new HashMap<>();
-        for (String arg : args){
-            isGenes = switch (arg) {
-                case "-genes" -> true;
-                case "-isoforms" -> false;
-                default -> true;
-            };
-        }
+
         String file = "";
         if (isGenes) {
             file = study + genesFile;
@@ -75,7 +85,7 @@ public class Main {
         }
         else
             file = study+isoformFile;
-        try (BufferedReader br = openFile("data/"+file)) {
+        try (BufferedReader br = dao.openFile("data/"+file)) {
             String lineData;
             int i = 0;
             while ((lineData = br.readLine()) != null) {
@@ -233,24 +243,9 @@ public class Main {
         return false;
     }
 
-    private BufferedReader openFile(String fileName) throws IOException {
-
-        String encoding = "UTF-8"; // default encoding
-
-        InputStream is;
-        if( fileName.endsWith(".gz") ) {
-            is = new GZIPInputStream(new FileInputStream(fileName));
-        } else {
-            is = new FileInputStream(fileName);
-        }
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, encoding));
-        return reader;
-    }
-
     Map<String, Gene> getGenesFromGTF() throws Exception{
         Map<String, Gene> genesRgdMap = new HashMap<>();
-        try (BufferedReader br = openFile(gtfFile)) {
+        try (BufferedReader br = dao.openFile(gtfFile)) {
             // chr gnomon type start stop skip skip skip geneIdLoc
             String lineData;
             while ((lineData = br.readLine()) != null) {
