@@ -185,6 +185,8 @@ public class MetaDataLoader {
             for (int i = 0; i < conditions.size(); i++){
                 Condition c = conditions.get(i);
                 Term t = dao.getTermByAccId(c.getOntologyId());
+                if (t==null)
+                    continue;
                 if (i == conditions.size()-1) {
                     condNames += t.getTerm();
                 }
