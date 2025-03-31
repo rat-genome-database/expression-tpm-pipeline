@@ -55,7 +55,13 @@ public class MetaDataLoader {
 
         for (String gse : studies){
             logger.info("Generating Meta Data for GEO study: "+gse);
-            generateFiles(gse);
+            try {
+                generateFiles(gse);
+            }
+            catch (Exception e){
+                logger.info("\tUnable to generate file due to:");
+                Utils.printStackTrace(e,logger);
+            }
             logger.info("================================================");
         }
 
@@ -74,8 +80,7 @@ public class MetaDataLoader {
         List<GeoRecord> rnaSeqRec = dao.getGeoRecords(gse, species);
         HashMap<String, GeoRecord> geoRecMap = new HashMap<>();
         if (rnaSeqRec == null || rnaSeqRec.isEmpty()) {
-            logger.info("\tNo RNA_SEQ data!");
-            return;
+            throw new Exception("\tUnable to find RNA_SEQ data! Cannot get study title");
         }
         else {
             geoRecMap = assignRecords(rnaSeqRec);
@@ -199,18 +204,6 @@ public class MetaDataLoader {
             else
                 sampleConditionsMap.put(s.getGeoSampleAcc(),condNames);
         }
-
-//            request.setAttribute("gse", gse);
-//            request.setAttribute("samples",samples);
-//            request.setAttribute("title",title);
-//            request.setAttribute("conditionMap", sampleConditionsMap);
-//            request.setAttribute("tissueMap", tissueMap);
-//            request.setAttribute("strainMap", strainMap);
-//            request.setAttribute("sampleSrrMap", sampleSRR);
-//            request.setAttribute("strainSynMap", strainLinkMap);
-
-
-
 
         // create buffer writer and generate files like in web app
         try(BufferedWriter bw = new BufferedWriter(new FileWriter("data/metaData/"+gse+"_AccList.txt")) ){
@@ -348,10 +341,6 @@ public class MetaDataLoader {
 
             }
         }
-        catch (Exception e){
-            Utils.printStackTrace(e, logger);
-        }
-
 
 
     }
