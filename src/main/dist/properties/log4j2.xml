@@ -52,6 +52,22 @@
         <File name="downloadSummary" append="false" fileName="logs/downloadSummary.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
         </File>
+
+        <RollingFile name="csDetail" append="true" fileName="logs/csDetail.log" filePattern="logs/csDetail.log.%d{yyyy-MM}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/><!-- 1 month roll over -->
+            </Policies>
+        </RollingFile>
+        <RollingFile name="csStatus" append="true" fileName="logs/csStatus.log" filePattern="logs/csStatus.log.%d{yyyy-MM}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %p [%c] - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+            </Policies>
+        </RollingFile>
+        <File name="csSummary" append="false" fileName="logs/csSummary.log">
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+        </File>
     </Appenders>
 
     <Loggers>
@@ -74,6 +90,12 @@
             <AppenderRef ref="downloadDetail"/>
             <AppenderRef ref="downloadStatus" level="info"/>
             <AppenderRef ref="downloadSummary" level="info"/>
+            <AppenderRef ref="Console" level="info"/>
+        </Logger>
+        <Logger name="csStatus" level="debug" additivity="false">
+            <AppenderRef ref="csDetail"/>
+            <AppenderRef ref="csStatus" level="info"/>
+            <AppenderRef ref="csSummary" level="info"/>
             <AppenderRef ref="Console" level="info"/>
         </Logger>
     </Loggers>

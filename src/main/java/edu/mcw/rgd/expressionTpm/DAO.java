@@ -132,6 +132,10 @@ public class DAO {
         return xdbIdDAO.getXdbIdsByRgdId(xdbKey, rgdId);
     }
 
+    public void updateComputedSex(List<Sample> samples) throws Exception {
+        pdao.updateSampleComputedSexBatch(samples);
+    }
+
     public BufferedReader openFile(String fileName) throws IOException {
 
         String encoding = "UTF-8"; // default encoding

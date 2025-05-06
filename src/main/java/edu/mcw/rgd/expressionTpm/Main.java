@@ -51,6 +51,10 @@ public class Main {
                         MetaDataLoader loader = (MetaDataLoader) bf.getBean("metaData");
                         loader.main();
                         break;
+                    case "--loadComputedSex":
+                        ComputedSexLoad csl = (ComputedSexLoad) bf.getBean("computedSexLoad");
+                        csl.run();
+                        break;
                     default:
                         main.run(true);;
                 };

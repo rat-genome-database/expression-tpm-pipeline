@@ -15,4 +15,8 @@
         <property name="studiesList" value="data/readOnly/studiesList.txt"/>
         <property name="species" value="Rattus"/>
     </bean>
+    <bean id="computedSexLoad" class="edu.mcw.rgd.expressionTpm.ComputedSexLoad">
+        <property name="version" value="Generate Meta Data for Studies -- build 05/02/2025"/>
+        <property name="dir" value="data/ComputedSexReports/"/>
+    </bean>
 </beans>
