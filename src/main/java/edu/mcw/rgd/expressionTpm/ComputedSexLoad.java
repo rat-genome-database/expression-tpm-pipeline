@@ -31,7 +31,7 @@ public class ComputedSexLoad {
 
         File folder = new File(dir);
         ArrayList<File> files = new ArrayList<>();
-        listFilesInFolder(folder, files);
+        dao.listFilesInFolder(folder, files);
 
         for (File file : files) {
             // look at col[0] (gsm id) and col[2] (computed sex)
@@ -84,18 +84,6 @@ public class ComputedSexLoad {
                 Utils.formatElapsedTime(pipeStart,System.currentTimeMillis())+"\n");
 
     }
-
-    void listFilesInFolder(File folder, ArrayList<File> vcfFiles) throws Exception {
-        for (File file : Objects.requireNonNull(folder.listFiles())) {
-            if (file.isDirectory()) {
-                listFilesInFolder(file,vcfFiles);
-            } else {
-//                    System.out.println(file.getName());
-                    vcfFiles.add(file);
-            }
-        }
-    }
-
 
     public void setVersion(String version) {
         this.version = version;

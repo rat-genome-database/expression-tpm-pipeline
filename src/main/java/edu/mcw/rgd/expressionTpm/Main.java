@@ -25,7 +25,6 @@ public class Main {
     private String genesFile;
     private String isoformFile;
     private String gtfFile;
-    private String study;
     private int speciesType;
     private int mapKey;
     protected Logger logger = LogManager.getLogger("status");
@@ -73,66 +72,74 @@ public class Main {
 
         long pipeStart = System.currentTimeMillis();
         logger.info("Pipeline started at "+sdt.format(new Date(pipeStart))+"\n");
-
-        logger.info("Running for study: " + study);
-
-//        boolean isGenes = true;
-        Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
-        Map<Integer,String> cmoMap = new HashMap<>();
-        List<GeneExpressionRecordValue> values = new ArrayList<>();
         Map<String, Gene> geneMap = new HashMap<>();
 
-        String file = "";
-        if (isGenes) {
-            file = study + genesFile;
-            geneMap = getGenesFromGTF();
+        ArrayList<File> files = new ArrayList<>();
+        File matrixLoc;
+        if (isGenes){
+            matrixLoc = new File(genesFile);
+            geneMap= getGenesFromGTF();
         }
         else
-            file = study+isoformFile;
-        try (BufferedReader br = dao.openFile("data/"+file)) {
-            String lineData;
-            int i = 0;
-            while ((lineData = br.readLine()) != null) {
-                String[] parsedLine = lineData.split("\t");
-                if (i==0){// row 0 is GEO sample names
-                    int j = 0;
-                    for (String col : parsedLine){
-                        if (j>0) {
-                            String sampleName = "";
-                            String[] parseCol = col.split("\\.");
-                            if (!parseCol[0].startsWith("G"))
-                                sampleName = parseCol[0].substring(1);
-                            else
-                                sampleName = parseCol[0];
+            matrixLoc = new File(isoformFile);
+
+        dao.listFilesInFolder(matrixLoc, files);
+
+        for (File file : files) {
+
+            String[] nameSplit = file.getName().split("\\.");
+            String study = nameSplit[0];
+            logger.info("Running for study: " + study);
+
+//        boolean isGenes = true;
+            Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
+            Map<Integer, String> cmoMap = new HashMap<>();
+            List<GeneExpressionRecordValue> values = new ArrayList<>();
+
+
+            try (BufferedReader br = dao.openFile(file.getAbsolutePath())) {
+                String lineData;
+                int i = 0;
+                while ((lineData = br.readLine()) != null) {
+                    String[] parsedLine = lineData.split("\t");
+                    if (i == 0) {// row 0 is GEO sample names
+                        int j = 0;
+                        for (String col : parsedLine) {
+                            if (j > 0) {
+                                String sampleName = "";
+                                String[] parseCol = col.split("\\.");
+                                if (!parseCol[0].startsWith("G"))
+                                    sampleName = parseCol[0].substring(1);
+                                else
+                                    sampleName = parseCol[0];
 //                            System.out.println(sampleName);
-                            Sample s = dao.getSampleByGeoSampleName(sampleName);
-                            if (s==null){
-                                logger.info("\t"+sampleName+" does not exist!");
-                                recordMap.put(j,null);
-                                cmoMap.put(j,null);
+                                Sample s = dao.getSampleByGeoSampleName(sampleName);
+                                if (s == null) {
+                                    logger.info("\t" + sampleName + " does not exist!");
+                                    recordMap.put(j, null);
+                                    cmoMap.put(j, null);
+                                } else {
+                                    GeneExpressionRecord r = dao.getGeneExpressionRecordBySample(s.getId());
+                                    recordMap.put(j, r);
+                                    cmoMap.put(j, s.getCellTypeAccId());
+                                }
                             }
-                            else{
-                                GeneExpressionRecord r = dao.getGeneExpressionRecordBySample(s.getId());
-                                recordMap.put(j, r);
-                                cmoMap.put(j,s.getCellTypeAccId());
-                            }
+                            j++;
                         }
-                        j++;
-                    }
-                } // end first row
-                else {
-                    String symbol = parsedLine[0];;
-                    String geneSymbol = "";
-                    Gene gene = null;
-                    Transcript transcript = null;
-                    if (isGenes) {
-                        geneSymbol = symbol.replace("\"", "");
-                        if (geneSymbol.startsWith("RGD")) {
-                            int rgdId = Integer.parseInt(geneSymbol.replace("RGD",""));
-                            gene = dao.getGeneByRgdId(rgdId);
-                        }
-                        else {
-                            gene = geneMap.get(geneSymbol);
+                    } // end first row
+                    else {
+                        String symbol = parsedLine[0];
+                        ;
+                        String geneSymbol = "";
+                        Gene gene = null;
+                        Transcript transcript = null;
+                        if (isGenes) {
+                            geneSymbol = symbol.replace("\"", "");
+                            if (geneSymbol.startsWith("RGD")) {
+                                int rgdId = Integer.parseInt(geneSymbol.replace("RGD", ""));
+                                gene = dao.getGeneByRgdId(rgdId);
+                            } else {
+                                gene = geneMap.get(geneSymbol);
 //                            if (genes.size()>1){
 //                                logger.info("\tGene: "+geneSymbol+" has multiple based on symbol...");
 //                                for (Gene g : genes){
@@ -148,89 +155,86 @@ public class Main {
 //                            }
 //                            else if (genes.size()==1)
 //                                gene=genes.get(0);
-                        }
-
-                    }
-                    else{
-                        // get transcript data somehow
-                        // remove trailing decimal and find transcript
-                        symbol = symbol.replace("\"", "");
-                        int trimIndex = symbol.indexOf(".");
-                        String acc = "";
-                        if (trimIndex<0)
-                            acc = symbol;
-                        else
-                            acc = symbol.substring(0,trimIndex);
-                        List<Transcript> tList = dao.getTranscriptsByAccId(acc);
-                        if (tList.size()==1){
-                            transcript = tList.get(0);
-                        }
-                        else if (tList.size()>1){
-                            logger.info("\tTranscript: "+acc+" has multiple records...");
-                            for (Transcript t : tList){
-                                logger.info("\t\tTranscript: "+t.dump("|"));
                             }
-                            //System.out.println(acc+" > 1");
+
+                        } else {
+                            // get transcript data somehow
+                            // remove trailing decimal and find transcript
+                            symbol = symbol.replace("\"", "");
+                            int trimIndex = symbol.indexOf(".");
+                            String acc = "";
+                            if (trimIndex < 0)
+                                acc = symbol;
+                            else
+                                acc = symbol.substring(0, trimIndex);
+                            List<Transcript> tList = dao.getTranscriptsByAccId(acc);
+                            if (tList.size() == 1) {
+                                transcript = tList.get(0);
+                            } else if (tList.size() > 1) {
+                                logger.info("\tTranscript: " + acc + " has multiple records...");
+                                for (Transcript t : tList) {
+                                    logger.info("\t\tTranscript: " + t.dump("|"));
+                                }
+                                //System.out.println(acc+" > 1");
+                            }
                         }
-                    }
-                    for (int j = 1; j < parsedLine.length; j++){
-                        if (gene==null && isGenes){
-                            notFoundLog.info("\tGene: "+geneSymbol+" was not found or has been withdrawn!");
-                            break;
-                        }
-                        if (transcript==null && !isGenes){
-                            notFoundLog.info("\tTranscript: "+symbol+" was not found!");
-                            break;
-                        }
-                        if (recordMap.get(j)==null){ // there is no record
-                            continue;
-                        }
-                        double value = Double.parseDouble(parsedLine[j]);
+                        for (int j = 1; j < parsedLine.length; j++) {
+                            if (gene == null && isGenes) {
+                                notFoundLog.info("\tGene: " + geneSymbol + " was not found or has been withdrawn!");
+                                break;
+                            }
+                            if (transcript == null && !isGenes) {
+                                notFoundLog.info("\tTranscript: " + symbol + " was not found!");
+                                break;
+                            }
+                            if (recordMap.get(j) == null) { // there is no record
+                                continue;
+                            }
+                            double value = Double.parseDouble(parsedLine[j]);
 //                        if (value==0)
 //                            continue;
-                        /* TPM Levels
-                         * High          x > 1000
-                         * Medium        10 < x <= 1000
-                         * Low           .5 <= x <= 10
-                         * Below Cutoff  x < .5
-                         */
-                        GeneExpressionRecordValue v = new GeneExpressionRecordValue();
-                        v.setMapKey(mapKey);
-                        if (isGenes)
-                            v.setExpressedObjectRgdId(gene.getRgdId());
-                        else
-                            v.setExpressedObjectRgdId(transcript.getRgdId());
-                        v.setExpressionUnit("TPM");
-                        v.setTpmValue(value);
-                        v.setExpressionValue(value);
-                        v.setGeneExpressionRecordId(recordMap.get(j).getId());
-                        v.setExpressionMeasurementAccId(cmoMap.get(j));
-                        if (value > 1000)
-                            v.setExpressionLevel("high");
-                        else if (value <= 1000 && value > 10)
-                            v.setExpressionLevel("medium");
-                        else if (value <= 10 && value >= .5)
-                            v.setExpressionLevel("low");
-                        else
-                            v.setExpressionLevel("below cutoff");
-                        if (Utils.isStringEmpty(v.getExpressionMeasurementAccId()) || Utils.doublesAreEqual(value, 0.00,2))
-                            continue;
-                        if (!checkValueExists(v))
-                            values.add(v);
+                            /* TPM Levels
+                             * High          x > 1000
+                             * Medium        10 < x <= 1000
+                             * Low           .5 <= x <= 10
+                             * Below Cutoff  x < .5
+                             */
+                            GeneExpressionRecordValue v = new GeneExpressionRecordValue();
+                            v.setMapKey(mapKey);
+                            if (isGenes)
+                                v.setExpressedObjectRgdId(gene.getRgdId());
+                            else
+                                v.setExpressedObjectRgdId(transcript.getRgdId());
+                            v.setExpressionUnit("TPM");
+                            v.setTpmValue(value);
+                            v.setExpressionValue(value);
+                            v.setGeneExpressionRecordId(recordMap.get(j).getId());
+                            v.setExpressionMeasurementAccId(cmoMap.get(j));
+                            if (value > 1000)
+                                v.setExpressionLevel("high");
+                            else if (value <= 1000 && value > 10)
+                                v.setExpressionLevel("medium");
+                            else if (value <= 10 && value >= .5)
+                                v.setExpressionLevel("low");
+                            else
+                                v.setExpressionLevel("below cutoff");
+                            if (Utils.isStringEmpty(v.getExpressionMeasurementAccId()) || Utils.doublesAreEqual(value, 0.00, 2))
+                                continue;
+                            if (!checkValueExists(v))
+                                values.add(v);
+                        }
                     }
+
+                    i++;
                 }
-
-                i++;
-            }
-            if (!values.isEmpty()){
-                logger.info("\t\tExpression Values being entered: "+values.size());
-                dao.insertExpressionRecordValues(values);
+                if (!values.isEmpty()) {
+                    logger.info("\t\tExpression Values being entered: " + values.size());
+                    dao.insertExpressionRecordValues(values);
+                }
+            } catch (Exception e) {
+                Utils.printStackTrace(e, logger);
             }
         }
-        catch (Exception e){
-            Utils.printStackTrace(e,logger);
-        }
-
         logger.info(" Total Elapsed time -- elapsed time: "+
                 Utils.formatElapsedTime(pipeStart,System.currentTimeMillis())+"\n");
     }
@@ -347,14 +351,6 @@ public class Main {
 
     public int getMapKey() {
         return mapKey;
-    }
-
-    public void setStudy(String study) {
-        this.study = study;
-    }
-
-    public String getStudy(){
-        return study;
     }
 
     public void setGenesFile(String genesFile) {

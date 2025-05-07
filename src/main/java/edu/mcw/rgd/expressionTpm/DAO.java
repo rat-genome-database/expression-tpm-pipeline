@@ -13,8 +13,10 @@ import org.springframework.jdbc.core.SqlParameter;
 import javax.sql.DataSource;
 import java.io.*;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -149,5 +151,16 @@ public class DAO {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(is, encoding));
         return reader;
+    }
+
+    void listFilesInFolder(File folder, ArrayList<File> vcfFiles) throws Exception {
+        for (File file : Objects.requireNonNull(folder.listFiles())) {
+            if (file.isDirectory()) {
+                listFilesInFolder(file,vcfFiles);
+            } else {
+//                    System.out.println(file.getName());
+                vcfFiles.add(file);
+            }
+        }
     }
 }

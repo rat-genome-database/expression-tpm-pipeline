@@ -3,10 +3,9 @@
     <bean id="main" class="edu.mcw.rgd.expressionTpm.Main">
         <property name="version" value="Load GEO expression TPM values -- build 2/28/2025"/>
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
-        <property name="genesFile" value=".genes.TPM.matrix"/>
-        <property name="isoformFile" value=".isoforms.TPM.matrix"/>
+        <property name="genesFile" value="data/genes/"/>
+        <property name="isoformFile" value="data/isoforms/"/>
         <property name="gtfFile" value="data/readOnly/mod_GCF_015227675.2_mRatBN7.2_genomic.gtf"/>
-        <property name="study" value="GSE114322"/>
         <property name="speciesType" value="3"/>
         <property name="mapKey" value="372"/>
     </bean>
