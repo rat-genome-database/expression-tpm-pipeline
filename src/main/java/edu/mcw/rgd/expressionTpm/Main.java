@@ -90,7 +90,7 @@ public class Main {
             String[] nameSplit = file.getName().split("\\.");
             String study = nameSplit[0];
             logger.info("Running for study: " + study);
-
+            notFoundLog.info("Running for study: " + study);
 //        boolean isGenes = true;
             Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
             Map<Integer, String> cmoMap = new HashMap<>();
