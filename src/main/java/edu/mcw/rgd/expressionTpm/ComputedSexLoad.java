@@ -58,6 +58,9 @@ public class ComputedSexLoad {
                             case "f":
                                 sex="Female";
                                 break;
+                            case "both":
+                                sex="Both";
+                                break;
                             default:
                                 sex="Undetermined";
                                 break;
