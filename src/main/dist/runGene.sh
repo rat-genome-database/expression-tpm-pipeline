@@ -16,3 +16,5 @@ java -Dspring.config=$APPDIR/../properties/default_db2.xml \
     -jar lib/$APPNAME.jar -genes "$@" > run.log 2>&1
 
 mailx -s "[$SERVER] expression-tpm-pipeline Run" $EMAILLIST < $APPDIR/logs/summary.log
+
+mailx -s "[$SERVER] expression-tpm-pipeline NotFound summary" $EMAILLIST < $APPDIR/logs/notFoundSummary.log
