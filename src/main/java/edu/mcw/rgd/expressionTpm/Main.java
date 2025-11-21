@@ -90,7 +90,6 @@ public class Main {
             String[] nameSplit = file.getName().split("\\.");
             String study = nameSplit[0];
             logger.info("Running for study: " + study);
-            notFoundLog.info("Running for study: " + study);
 //        boolean isGenes = true;
             Map<Integer, GeneExpressionRecord> recordMap = new HashMap<>();
             Map<Integer, String> cmoMap = new HashMap<>();
@@ -129,16 +128,11 @@ public class Main {
                     } // end first row
                     else {
                         String symbol = parsedLine[0];
-                        ;
                         String geneSymbol = "";
                         Gene gene = null;
                         Transcript transcript = null;
                         if (isGenes) {
                             geneSymbol = symbol.replace("\"", "");
-                            if (geneSymbol.startsWith("RGD")) {
-                                int rgdId = Integer.parseInt(geneSymbol.replace("RGD", ""));
-                                gene = dao.getGeneByRgdId(rgdId);
-                            } else {
                                 gene = geneMap.get(geneSymbol);
 //                            if (genes.size()>1){
 //                                logger.info("\tGene: "+geneSymbol+" has multiple based on symbol...");
@@ -155,8 +149,6 @@ public class Main {
 //                            }
 //                            else if (genes.size()==1)
 //                                gene=genes.get(0);
-                            }
-
                         } else {
                             // get transcript data somehow
                             // remove trailing decimal and find transcript
@@ -180,7 +172,7 @@ public class Main {
                         }
                         for (int j = 1; j < parsedLine.length; j++) {
                             if (gene == null && isGenes) {
-                                notFoundLog.info("\tGene: " + geneSymbol + " was not found or has been withdrawn!");
+                                //notFoundLog.info("\tGene: " + geneSymbol + " was not found or has been withdrawn!");
                                 break;
                             }
                             if (transcript == null && !isGenes) {
@@ -253,6 +245,7 @@ public class Main {
 
     Map<String, Gene> getGenesFromGTF() throws Exception{
         Map<String, Gene> genesRgdMap = new HashMap<>();
+        Map<String, Integer> notFoundGenes = new HashMap<>();
         try (BufferedReader br = dao.openFile(gtfFile)) {
             // chr gnomon type start stop skip skip skip geneIdLoc
             String lineData;
@@ -269,8 +262,9 @@ public class Main {
                 String geneSymbol = infoSplit[0];
                 geneSymbol = geneSymbol.replace("gene_id ", "");
                 geneSymbol = geneSymbol.replace("\"", "");
-                if (genesRgdMap.get(geneSymbol) != null)
+                if (genesRgdMap.get(geneSymbol) != null || notFoundGenes.get(geneSymbol) != null)
                     continue;
+
                 List<Gene> genes = dao.getActiveGenesBySymbol(geneSymbol.toLowerCase(), speciesType);
                 if (!genes.isEmpty()) {
                     for (Gene g : genes){
@@ -279,10 +273,24 @@ public class Main {
                             break;
                         }
                     }
-                } else {
+                } else if (geneSymbol.startsWith("RGD"))
+                {
+                    int rgdId = Integer.parseInt(geneSymbol.replace("RGD", ""));
+                    Gene gene = dao.getGeneByRgdId(rgdId);
+                    genesRgdMap.put(geneSymbol, gene);
+                }
+                else {
                     List<Gene> activeGenes = dao.getActiveGenesByLocation(chr, start, stop, mapKey);
                     if (activeGenes.size() == 1) {
-                        genesRgdMap.put(geneSymbol, activeGenes.get(0));
+                        Gene foundGene = activeGenes.get(0);
+                        if (Utils.stringsAreEqualIgnoreCase(foundGene.getSymbol(), geneSymbol)){
+                            genesRgdMap.put(geneSymbol, activeGenes.get(0));
+                        }
+                        else {
+//                            notFoundGenes.put(geneSymbol,1);
+                            notFoundLog.info("Gene " + geneSymbol + " overlaps active Gene " + foundGene.getSymbol());
+                        }
+
                     } else if (!activeGenes.isEmpty()){
                         boolean found = false;
                         // loop through genes and find whichever one by alias if need be
@@ -321,6 +329,10 @@ public class Main {
                         }
                     }
                 } // end else
+                if (genesRgdMap.get(geneSymbol)==null){
+                    notFoundGenes.put(geneSymbol,1);
+                    notFoundLog.info("\tGene: " + geneSymbol + " was not found or has been withdrawn!");
+                }
             } // end while
         }
         catch (Exception e){

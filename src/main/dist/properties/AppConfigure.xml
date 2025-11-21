@@ -1,7 +1,7 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
     <bean id="main" class="edu.mcw.rgd.expressionTpm.Main">
-        <property name="version" value="Load GEO expression TPM values -- build 2/28/2025"/>
+        <property name="version" value="Load GEO expression TPM values -- build 11/20/2025"/>
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
         <property name="genesFile" value="data/genes/"/>
         <property name="isoformFile" value="data/isoforms/"/>
