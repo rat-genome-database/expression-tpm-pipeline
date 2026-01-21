@@ -19,10 +19,7 @@ import org.jsoup.select.Elements;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class MetaDataLoader {
@@ -187,11 +184,39 @@ public class MetaDataLoader {
             GeneExpressionRecord r = dao.getGeneExpressionRecordBySampleId(s.getId());
             List<Condition> conditions = dao.getConditions(r.getId());
             String condNames = "";
+
+            if (!Utils.isStringEmpty(s.getCellTypeAccId())){
+                Term ct = dao.getTermByAccId(s.getCellTypeAccId());
+                condNames += ct.getTerm()+"; ";
+            }
+
+            String age = "";
+            if (Objects.equals(s.getAgeDaysFromLowBound(),s.getAgeDaysFromHighBound()) && s.getAgeDaysFromLowBound() != 0)
+                age = s.getAgeDaysFromHighBound()+"d; ";
+            else if (!Objects.equals(s.getAgeDaysFromLowBound(), s.getAgeDaysFromHighBound()))
+                age = s.getAgeDaysFromLowBound()+"-"+s.getAgeDaysFromHighBound()+"d;" + " ";
+            else
+                age = s.getLifeStage() + "; ";
+            condNames += age;
             for (int i = 0; i < conditions.size(); i++){
                 Condition c = conditions.get(i);
+                boolean hasDuration = c.getDurationUpperBound()!=0.0 && c.getDurationLowerBound()!=0.0;
+                if (!Utils.isStringEmpty(c.getUnits()) && hasDuration){
+
+                    String strAdd = getDoesText(c.getValueMin(),c.getValueMax(),c.getUnits()) + " " +
+                            getReadableTimeFromSeconds(c.getDurationLowerBound(),c.getDurationUpperBound());
+                    condNames += strAdd + " ";
+                }
+                else if (Utils.isStringEmpty(c.getUnits()) && hasDuration){
+                    if (c.getDurationLowerBound()==c.getDurationUpperBound())
+                    {
+                        condNames += getReadableTimeFromSeconds(c.getDurationLowerBound(),c.getDurationUpperBound()) + " " ;
+                    }
+                }
+                else { // only has units
+                    condNames += getDoesText(c.getValueMin(),c.getValueMax(),c.getUnits()) + " ";
+                }
                 Term t = dao.getTermByAccId(c.getOntologyId());
-                if (t==null)
-                    continue;
                 if (i == conditions.size()-1) {
                     condNames += t.getTerm();
                 }
@@ -375,5 +400,64 @@ public class MetaDataLoader {
 
     public String getSpecies() {
         return species;
+    }
+
+    public static String getReadableTimeFromSeconds(Double durLow, Double durHigh) {
+        String durationText = "";
+        if (durLow != null && durHigh != null && durLow != 0.0) {
+            // Determine the maximum value to decide unit
+            double maxDuration = Math.max(durLow, durHigh);
+
+            String unit;
+            double divisor;
+
+            if (maxDuration >= 31536000) { // ≥ 1 year
+                unit = "years";
+                divisor = 31536000.0;
+            }
+            else if (maxDuration >= 86400) { // ≥ 1 day
+                unit = "days";
+                divisor = 86400.0;
+            }
+            else if (maxDuration >= 3600) { // ≥ 1 hour
+                unit = "hrs";
+                divisor = 3600.0;
+            }
+            else if (maxDuration >= 60) { // ≥ 1 minute
+                unit = "mins";
+                divisor = 60.0;
+            }
+            else {
+                unit = "secs";
+                divisor = 1.0;
+            }
+
+            // Convert values to above unit
+            double convertedLow = durLow / divisor;
+            double convertedHigh = durHigh / divisor;
+
+            // kept single decimal value for now
+            if (convertedLow == convertedHigh) {
+                durationText = String.format("%.1f %s", convertedLow, unit);
+            }
+            else {
+                durationText = String.format("%.1f - %.1f %s", convertedLow, convertedHigh, unit);
+            }
+        }
+        return durationText;
+    }
+    String getDoesText(String valLow, String valHigh, String units){
+        Double minVal = Double.parseDouble(valLow);
+        Double maxVal = Double.parseDouble(valHigh);
+        String doseText = "";
+
+        if(minVal != null && maxVal != null && units != null) {
+            if(minVal.equals(maxVal)) {
+                doseText = minVal + " " + units;
+            } else {
+                doseText = minVal + " " + units + " - " + maxVal + " " + units;
+            }
+        }
+        return doseText;
     }
 }
