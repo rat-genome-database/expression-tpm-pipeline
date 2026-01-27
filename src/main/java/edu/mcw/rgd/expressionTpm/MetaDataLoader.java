@@ -192,11 +192,11 @@ public class MetaDataLoader {
 
             String age = "";
             if (Objects.equals(s.getAgeDaysFromLowBound(),s.getAgeDaysFromHighBound()) && s.getAgeDaysFromLowBound() != 0)
-                age = s.getAgeDaysFromHighBound()+"d; ";
+                age = s.getAgeDaysFromHighBound()+"d;";
             else if (!Objects.equals(s.getAgeDaysFromLowBound(), s.getAgeDaysFromHighBound()))
-                age = s.getAgeDaysFromLowBound()+"-"+s.getAgeDaysFromHighBound()+"d;" + " ";
+                age = s.getAgeDaysFromLowBound()+"-"+s.getAgeDaysFromHighBound()+"d;";
             else
-                age = s.getLifeStage() + "; ";
+                age = s.getLifeStage() + ";";
             condNames += age;
             for (int i = 0; i < conditions.size(); i++){
                 Condition c = conditions.get(i);
