@@ -3,11 +3,11 @@
     <bean id="main" class="edu.mcw.rgd.expressionTpm.Main">
         <property name="version" value="Load GEO expression TPM values -- build 11/20/2025"/>
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
-        <property name="genesFile" value="data/genes/"/>
+        <property name="genesFile" value="data/genes/GRCr8/"/>
         <property name="isoformFile" value="data/isoforms/"/>
-        <property name="gtfFile" value="data/readOnly/mod_GCF_015227675.2_mRatBN7.2_genomic.gtf"/>
+        <property name="gtfFile" value="data/readOnly/updated_GCF_036323735.1_CM070413.1_GRCr8_genomic.gtf"/>
         <property name="speciesType" value="3"/>
-        <property name="mapKey" value="372"/>
+        <property name="mapKey" value="380"/>
     </bean>
     <bean id="metaData" class="edu.mcw.rgd.expressionTpm.MetaDataLoader">
         <property name="version" value="Generate Meta Data for Studies -- build 03/21/2025"/>

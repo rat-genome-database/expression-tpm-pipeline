@@ -210,7 +210,7 @@ public class Main {
                                 v.setExpressionLevel("low");
                             else
                                 v.setExpressionLevel("below cutoff");
-                            if (Utils.isStringEmpty(v.getExpressionMeasurementAccId()) || Utils.doublesAreEqual(value, 0.00, 2))
+                            if (Utils.doublesAreEqual(value, 0.00, 2))
                                 continue;
                             if (!checkValueExists(v))
                                 values.add(v);
