@@ -54,6 +54,10 @@ public class Main {
                         ComputedSexLoad csl = (ComputedSexLoad) bf.getBean("computedSexLoad");
                         csl.run();
                         break;
+                    case "--addHrdpSamples":
+                        HRDPSampleDataLoad sl = (HRDPSampleDataLoad) bf.getBean("addHrdpSamples");
+                        sl.run();
+                        break;
                     default:
                         main.run(true);;
                 };
@@ -78,7 +82,7 @@ public class Main {
         File matrixLoc;
         if (isGenes){
             matrixLoc = new File(genesFile);
-            geneMap= getGenesFromGTF();
+            geneMap = dao.getGenesFromGTF(gtfFile, speciesType, mapKey, logger, notFoundLog);
         }
         else
             matrixLoc = new File(isoformFile);
@@ -212,7 +216,7 @@ public class Main {
                                 v.setExpressionLevel("below cutoff");
                             if (Utils.doublesAreEqual(value, 0.00, 2))
                                 continue;
-                            if (!checkValueExists(v))
+                            if (!dao.checkValueExists(v))
                                 values.add(v);
                         }
                     }
@@ -231,115 +235,6 @@ public class Main {
                 Utils.formatElapsedTime(pipeStart,System.currentTimeMillis())+"\n");
     }
 
-    boolean checkValueExists(GeneExpressionRecordValue incomingValue) throws Exception{
-        List<GeneExpressionRecordValue> existingValues = dao.getGeneExpressionRecordValuesByRecordIdAndExpressedObjId(incomingValue.getGeneExpressionRecordId(),incomingValue.getExpressedObjectRgdId(),"TPM");
-        if (existingValues.isEmpty())
-            return false;
-        for (GeneExpressionRecordValue v : existingValues){
-            if (Double.compare(v.getExpressionValue(),incomingValue.getExpressionValue()) == 0 &&
-                    Utils.stringsAreEqual(v.getExpressionMeasurementAccId(),incomingValue.getExpressionMeasurementAccId()) )
-                return true;
-        }
-        return false;
-    }
-
-    Map<String, Gene> getGenesFromGTF() throws Exception{
-        Map<String, Gene> genesRgdMap = new HashMap<>();
-        Map<String, Integer> notFoundGenes = new HashMap<>();
-        try (BufferedReader br = dao.openFile(gtfFile)) {
-            // chr gnomon type start stop skip skip skip geneIdLoc
-            String lineData;
-            while ((lineData = br.readLine()) != null) {
-                if (lineData.startsWith("#"))
-                    continue;
-                String[] split = lineData.split("\t");
-                String chr = split[0].replace("chr", "");
-                int start = Integer.parseInt(split[3]);
-                int stop = Integer.parseInt(split[4]);
-                String part8 = split[8];
-                // parse part8 to get gene id and find gene based on position
-                String[] infoSplit = part8.split(";");
-                String geneSymbol = infoSplit[0];
-                geneSymbol = geneSymbol.replace("gene_id ", "");
-                geneSymbol = geneSymbol.replace("\"", "");
-                if (genesRgdMap.get(geneSymbol) != null || notFoundGenes.get(geneSymbol) != null)
-                    continue;
-
-                List<Gene> genes = dao.getActiveGenesBySymbol(geneSymbol.toLowerCase(), speciesType);
-                if (!genes.isEmpty()) {
-                    for (Gene g : genes){
-                        if (Utils.stringsAreEqualIgnoreCase(g.getSymbol(), geneSymbol)) {
-                            genesRgdMap.put(geneSymbol, g);
-                            break;
-                        }
-                    }
-                } else if (geneSymbol.startsWith("RGD"))
-                {
-                    int rgdId = Integer.parseInt(geneSymbol.replace("RGD", ""));
-                    Gene gene = dao.getGeneByRgdId(rgdId);
-                    genesRgdMap.put(geneSymbol, gene);
-                }
-                else {
-                    List<Gene> activeGenes = dao.getActiveGenesByLocation(chr, start, stop, mapKey);
-                    if (activeGenes.size() == 1) {
-                        Gene foundGene = activeGenes.get(0);
-                        if (Utils.stringsAreEqualIgnoreCase(foundGene.getSymbol(), geneSymbol)){
-                            genesRgdMap.put(geneSymbol, activeGenes.get(0));
-                        }
-                        else {
-//                            notFoundGenes.put(geneSymbol,1);
-                            notFoundLog.info("Gene " + geneSymbol + " overlaps active Gene " + foundGene.getSymbol());
-                        }
-
-                    } else if (!activeGenes.isEmpty()){
-                        boolean found = false;
-                        // loop through genes and find whichever one by alias if need be
-                        for (Gene g : activeGenes) {
-                            if (Utils.stringsAreEqualIgnoreCase(g.getSymbol(), geneSymbol)) {
-                                genesRgdMap.put(geneSymbol, g);
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            List<Gene> geneList = dao.getGenesByAlias(geneSymbol, speciesType);
-                            for (Gene gene : activeGenes) {
-                                for (Gene alias : geneList) {
-                                    if (gene.getRgdId() == alias.getRgdId()) {
-                                        genesRgdMap.put(geneSymbol, alias);
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (found)
-                                    break;
-                            }
-                        }
-                    }
-                    else {// active genes is empty
-                        List<Gene> geneList = dao.getGenesByAliasAndAliasType(geneSymbol, speciesType,"old_gene_symbol");
-                        if (geneList.size()==1){
-                            genesRgdMap.put(geneSymbol,geneList.get(0));
-                        }
-                        else if (!geneList.isEmpty()){
-                            // ?
-//                            genesRgdMap.put(geneSymbol,null);
-                            logger.info("\t"+geneSymbol+" has multiple genes from Alias");
-//                            System.out.println(geneList);
-                        }
-                    }
-                } // end else
-                if (genesRgdMap.get(geneSymbol)==null){
-                    notFoundGenes.put(geneSymbol,1);
-                    notFoundLog.info("\tGene: " + geneSymbol + " was not found or has been withdrawn!");
-                }
-            } // end while
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        return genesRgdMap;
-    }
 
     public void setVersion(String version) {
         this.version=version;

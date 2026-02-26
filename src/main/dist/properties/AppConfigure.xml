@@ -3,11 +3,11 @@
     <bean id="main" class="edu.mcw.rgd.expressionTpm.Main">
         <property name="version" value="Load GEO expression TPM values -- build 11/20/2025"/>
 <!--        <property name="file" value="data/GSE148598_mRatBN72.genes.TPM.matrix"/>-->
-        <property name="genesFile" value="data/genes/GRCr8/"/>
+        <property name="genesFile" value="data/genes/rat7.2/"/>
         <property name="isoformFile" value="data/isoforms/"/>
-        <property name="gtfFile" value="data/readOnly/updated_GCF_036323735.1_CM070413.1_GRCr8_genomic.gtf"/>
+        <property name="gtfFile" value="data/readOnly/mod_GCF_015227675.2_mRatBN7.2_genomic.gtf"/>
         <property name="speciesType" value="3"/>
-        <property name="mapKey" value="380"/>
+        <property name="mapKey" value="372"/>
     </bean>
     <bean id="metaData" class="edu.mcw.rgd.expressionTpm.MetaDataLoader">
         <property name="version" value="Generate Meta Data for Studies -- build 03/21/2025"/>
@@ -17,5 +17,43 @@
     <bean id="computedSexLoad" class="edu.mcw.rgd.expressionTpm.ComputedSexLoad">
         <property name="version" value="Generate Meta Data for Studies -- build 05/02/2025"/>
         <property name="dir" value="data/ComputedSexReports/"/>
+    </bean>
+    <bean id="addHrdpSamples" class="edu.mcw.rgd.expressionTpm.HRDPSampleDataLoad">
+        <property name="version" value="Create sample data for HRDP data -- build 02/17/2026"/>
+        <property name="hrdpSampleFile" value="data/readOnly/Dwinell_AccList_correct.txt"/>
+        <property name="gtfFile" value="data/readOnly/updated_GCF_036323735.1_CM070413.1_GRCr8_genomic.gtf"/>
+        <property name="matrixFile" value="data/genes/GRCr8/Dwinell_GRCr8.genes.counts.matrix"/>
+        <property name="speciesType" value="3"/>
+        <property name="mapKey" value="380"/>
+        <property name="studyId" value="3692"/> <!-- 3714 pipelines study -->
+        <property name="tissueMap">
+            <map>
+                <entry key="Thymus" value="UBERON:0002370"/>
+                <entry key="Gastrocnemius" value="UBERON:0001388"/>
+                <entry key="LRetroFatPad" value="UBERON:0010411"/>
+                <entry key="LKidney" value="UBERON:0004538"/>
+            </map>
+        </property>
+        <property name="cmoMap">
+            <map>
+                <entry key="Thymus" value="CMO:0002802"/>
+                <entry key="Gastrocnemius" value="CMO:0003252"/>
+                <entry key="LRetroFatPad" value="CMO:0004136"/>
+                <entry key="LKidney" value="CMO:0003912"/>
+            </map>
+        </property>
+        <property name="vtMap">
+            <map>
+                <entry key="Thymus" value="VT:0010803"/>
+                <entry key="Gastrocnemius" value="VT:0011248"/>
+                <entry key="LRetroFatPad" value="VT:0011280"/>
+                <entry key="LKidney" value="VT:0010793"/>
+            </map>
+        </property>
+        <property name="conditionMap">
+            <map>
+                <entry key="Control_Condition" value="XCO:0000099"/>
+            </map>
+        </property>
     </bean>
 </beans>

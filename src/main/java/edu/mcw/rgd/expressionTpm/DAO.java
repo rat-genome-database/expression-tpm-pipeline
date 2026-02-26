@@ -3,20 +3,22 @@ package edu.mcw.rgd.expressionTpm;
 import edu.mcw.rgd.dao.DataSourceFactory;
 import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.dao.spring.GeneQuery;
+import edu.mcw.rgd.dao.spring.PhenoSampleQuery;
+import edu.mcw.rgd.dao.spring.SampleQuery;
 import edu.mcw.rgd.datamodel.*;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.ontologyx.TermSynonym;
 import edu.mcw.rgd.datamodel.pheno.*;
 import edu.mcw.rgd.datamodel.pheno.Sample;
+import edu.mcw.rgd.process.Utils;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.SqlParameter;
 
 import javax.sql.DataSource;
 import java.io.*;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -74,6 +76,16 @@ public class DAO {
         return q.execute(alias, species,aliasType);
     }
 
+    public Sample getSampleByHRDPSampleName(String sampleName) throws Exception {
+        String sql = "select * from SAMPLE where to_char(SAMPLE_NOTES)=?";
+        PhenoSampleQuery q = new PhenoSampleQuery(pdao.getDataSource(), sql);
+        q.declareParameter(new SqlParameter(Types.VARCHAR));
+        List<Sample> samples =  q.execute(sampleName);
+        if (samples.isEmpty())
+            return null;
+        return samples.get(0);
+    }
+
     public List<Gene> getGenesByEnsemblSymbol(int speciesTypeKey, String symbol) throws Exception{
         return geneDAO.getActiveGenesByEnsemblSymbol(speciesTypeKey,symbol);
     }
@@ -114,6 +126,10 @@ public class DAO {
         return gedao.getGeneExpressionRecordBySampleId(sampleId);
     }
 
+    public GeneExpressionRecord getGeneExpressionRecord(int id) throws Exception {
+        return gedao.getGeneExpressionRecordById(id);
+    }
+
     public List<Condition> getConditions(int recordId) throws Exception{
         return gedao.getConditions(recordId);
     }
@@ -138,6 +154,38 @@ public class DAO {
         pdao.updateSampleComputedSexBatch(samples);
     }
 
+    public String getStrainOntIdForRgdId(int rgdId) throws Exception {
+        return xdao.getStrainOntIdForRgdId(rgdId);
+    }
+
+    public int insertClinicalMeasurement(ClinicalMeasurement cmo) throws Exception {
+        return gedao.insertClinicalMeasurement(cmo);
+    }
+
+    public int insertExperiment(Experiment e) throws Exception {
+        return pdao.insertExperiment(e);
+    }
+
+    public int insertSample(Sample s) throws Exception {
+        return pdao.insertSample(s);
+    }
+
+    public int insertGeneExpressionRecord(GeneExpressionRecord gre) throws Exception {
+        return gedao.insertGeneExpressionRecord(gre);
+    }
+
+    public int insertCondition(Condition c) throws Exception {
+        return pdao.insertCondition(c);
+    }
+
+    public Study getStudy(int studyId) throws Exception {
+        return pdao.getStudy(studyId);
+    }
+
+    public List<Experiment> getExperiments(int studyId) throws Exception {
+        return pdao.getExperiments(studyId);
+    }
+
     public BufferedReader openFile(String fileName) throws IOException {
 
         String encoding = "UTF-8"; // default encoding
@@ -153,7 +201,7 @@ public class DAO {
         return reader;
     }
 
-    void listFilesInFolder(File folder, ArrayList<File> vcfFiles) throws Exception {
+    public void listFilesInFolder(File folder, ArrayList<File> vcfFiles) throws Exception {
         for (File file : Objects.requireNonNull(folder.listFiles())) {
             if (file.isDirectory()) {
                 listFilesInFolder(file,vcfFiles);
@@ -162,5 +210,114 @@ public class DAO {
                 vcfFiles.add(file);
             }
         }
+    }
+    public Map<String, Gene> getGenesFromGTF(String gtfFile, int speciesType, int mapKey, Logger logger, Logger notFoundLog) throws Exception{
+        java.util.Map<String, Gene> genesRgdMap = new HashMap<>();
+        Map<String, Integer> notFoundGenes = new HashMap<>();
+        try (BufferedReader br = openFile(gtfFile)) {
+            // chr gnomon type start stop skip skip skip geneIdLoc
+            String lineData;
+            while ((lineData = br.readLine()) != null) {
+                if (lineData.startsWith("#"))
+                    continue;
+                String[] split = lineData.split("\t");
+                String chr = split[0].replace("chr", "");
+                int start = Integer.parseInt(split[3]);
+                int stop = Integer.parseInt(split[4]);
+                String part8 = split[8];
+                // parse part8 to get gene id and find gene based on position
+                String[] infoSplit = part8.split(";");
+                String geneSymbol = infoSplit[0];
+                geneSymbol = geneSymbol.replace("gene_id ", "");
+                geneSymbol = geneSymbol.replace("\"", "");
+                if (genesRgdMap.get(geneSymbol) != null || notFoundGenes.get(geneSymbol) != null)
+                    continue;
+
+                List<Gene> genes = getActiveGenesBySymbol(geneSymbol.toLowerCase(), speciesType);
+                if (!genes.isEmpty()) {
+                    for (Gene g : genes){
+                        if (Utils.stringsAreEqualIgnoreCase(g.getSymbol(), geneSymbol)) {
+                            genesRgdMap.put(geneSymbol, g);
+                            break;
+                        }
+                    }
+                } else if (geneSymbol.startsWith("RGD"))
+                {
+                    int rgdId = Integer.parseInt(geneSymbol.replace("RGD", ""));
+                    Gene gene = getGeneByRgdId(rgdId);
+                    genesRgdMap.put(geneSymbol, gene);
+                }
+                else {
+                    List<Gene> activeGenes = getActiveGenesByLocation(chr, start, stop, mapKey);
+                    if (activeGenes.size() == 1) {
+                        Gene foundGene = activeGenes.get(0);
+                        if (Utils.stringsAreEqualIgnoreCase(foundGene.getSymbol(), geneSymbol)){
+                            genesRgdMap.put(geneSymbol, activeGenes.get(0));
+                        }
+                        else {
+//                            notFoundGenes.put(geneSymbol,1);
+                            notFoundLog.info("Gene " + geneSymbol + " overlaps active Gene " + foundGene.getSymbol());
+                        }
+
+                    } else if (!activeGenes.isEmpty()){
+                        boolean found = false;
+                        // loop through genes and find whichever one by alias if need be
+                        for (Gene g : activeGenes) {
+                            if (Utils.stringsAreEqualIgnoreCase(g.getSymbol(), geneSymbol)) {
+                                genesRgdMap.put(geneSymbol, g);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            List<Gene> geneList = getGenesByAlias(geneSymbol, speciesType);
+                            for (Gene gene : activeGenes) {
+                                for (Gene alias : geneList) {
+                                    if (gene.getRgdId() == alias.getRgdId()) {
+                                        genesRgdMap.put(geneSymbol, alias);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (found)
+                                    break;
+                            }
+                        }
+                    }
+                    else {// active genes is empty
+                        List<Gene> geneList = getGenesByAliasAndAliasType(geneSymbol, speciesType,"old_gene_symbol");
+                        if (geneList.size()==1){
+                            genesRgdMap.put(geneSymbol,geneList.get(0));
+                        }
+                        else if (!geneList.isEmpty()){
+                            // ?
+//                            genesRgdMap.put(geneSymbol,null);
+                            logger.info("\t"+geneSymbol+" has multiple genes from Alias");
+//                            System.out.println(geneList);
+                        }
+                    }
+                } // end else
+                if (genesRgdMap.get(geneSymbol)==null){
+                    notFoundGenes.put(geneSymbol,1);
+                    notFoundLog.info("\tGene: " + geneSymbol + " was not found or has been withdrawn!");
+                }
+            } // end while
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        return genesRgdMap;
+    }
+
+    public boolean checkValueExists(GeneExpressionRecordValue incomingValue) throws Exception{
+        List<GeneExpressionRecordValue> existingValues = getGeneExpressionRecordValuesByRecordIdAndExpressedObjId(incomingValue.getGeneExpressionRecordId(),incomingValue.getExpressedObjectRgdId(),"TPM");
+        if (existingValues.isEmpty())
+            return false;
+        for (GeneExpressionRecordValue v : existingValues){
+            if (Double.compare(v.getExpressionValue(),incomingValue.getExpressionValue()) == 0 &&
+                    Utils.stringsAreEqual(v.getExpressionMeasurementAccId(),incomingValue.getExpressionMeasurementAccId()) )
+                return true;
+        }
+        return false;
     }
 }
