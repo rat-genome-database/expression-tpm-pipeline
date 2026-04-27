@@ -1,11 +1,9 @@
 package edu.mcw.rgd.expressionTpm;
 
 import edu.mcw.rgd.datamodel.Gene;
-import edu.mcw.rgd.datamodel.MapData;
 import edu.mcw.rgd.datamodel.Transcript;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecord;
 import edu.mcw.rgd.datamodel.pheno.GeneExpressionRecordValue;
-import edu.mcw.rgd.datamodel.pheno.GeneExpressionValueCount;
 import edu.mcw.rgd.datamodel.pheno.Sample;
 import edu.mcw.rgd.process.Utils;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +15,6 @@ import org.springframework.core.io.FileSystemResource;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 public class Main {
     private String version;

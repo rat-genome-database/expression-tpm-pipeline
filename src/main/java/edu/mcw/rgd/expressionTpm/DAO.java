@@ -1,10 +1,8 @@
 package edu.mcw.rgd.expressionTpm;
 
-import edu.mcw.rgd.dao.DataSourceFactory;
 import edu.mcw.rgd.dao.impl.*;
 import edu.mcw.rgd.dao.spring.GeneQuery;
 import edu.mcw.rgd.dao.spring.PhenoSampleQuery;
-import edu.mcw.rgd.dao.spring.SampleQuery;
 import edu.mcw.rgd.datamodel.*;
 import edu.mcw.rgd.datamodel.ontologyx.Term;
 import edu.mcw.rgd.datamodel.ontologyx.TermSynonym;
@@ -14,7 +12,6 @@ import edu.mcw.rgd.process.Utils;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.SqlParameter;
 
-import javax.sql.DataSource;
 import java.io.*;
 import java.sql.Types;
 import java.util.*;

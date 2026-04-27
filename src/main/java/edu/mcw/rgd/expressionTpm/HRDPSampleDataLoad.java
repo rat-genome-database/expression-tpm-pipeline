@@ -1,8 +1,6 @@
 package edu.mcw.rgd.expressionTpm;
 
 import edu.mcw.rgd.datamodel.Gene;
-import edu.mcw.rgd.datamodel.Strain;
-import edu.mcw.rgd.datamodel.Transcript;
 import edu.mcw.rgd.datamodel.pheno.*;
 import edu.mcw.rgd.process.Utils;
 import org.apache.logging.log4j.LogManager;
