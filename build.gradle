@@ -23,12 +23,15 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.apache.commons:commons-collections4:4.4'
-    implementation 'org.apache.commons:commons-dbcp2:2.9.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.22.0'
-    implementation 'com.oracle.database.jdbc:ojdbc10:19.21.0.0'
-    implementation 'org.springframework:spring-jdbc:6.1.21'
-    implementation 'org.jsoup:jsoup:1.17.1'
+    implementation 'org.apache.commons:commons-collections4:4.5.0'
+    implementation('org.apache.commons:commons-dbcp2:2.10.0') {
+        // spring-jcl already provides the commons-logging API; drop the real jar to avoid the conflict
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
+    implementation 'org.apache.logging.log4j:log4j-core:2.23.0'
+    implementation 'com.oracle.database.jdbc:ojdbc11:23.26.2.0.0'
+    implementation 'org.springframework:spring-jdbc:6.2.18'
+    implementation 'org.jsoup:jsoup:1.18.1'
 
     implementation fileTree(dir: 'lib', include: '*.jar')
 }

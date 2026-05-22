@@ -56,8 +56,8 @@ public class Main {
                         sl.run();
                         break;
                     default:
-                        main.run(true);;
-                };
+                        main.run(true);
+                }
             }
 
         }
